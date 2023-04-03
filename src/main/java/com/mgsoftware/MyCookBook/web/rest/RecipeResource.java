@@ -2,6 +2,7 @@ package com.mgsoftware.MyCookBook.web.rest;
 
 import com.mgsoftware.MyCookBook.MockDB;
 import com.mgsoftware.MyCookBook.domain.Recipe;
+import com.mgsoftware.MyCookBook.repository.RecipeRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,13 +15,16 @@ public class RecipeResource {
 
     private final MockDB mockDB;
 
-    public RecipeResource(MockDB mockDB) {
+    private final RecipeRepository recipeRepository;
+
+    public RecipeResource(MockDB mockDB, RecipeRepository recipeRepository) {
 
         this.mockDB = mockDB;
+        this.recipeRepository = recipeRepository;
     }
     @PostMapping("/recipes")
     ResponseEntity<Recipe> createRecipe(@RequestBody Recipe recipe){
-        ResponseEntity<Recipe> responseEntity = new ResponseEntity(mockDB.addRecipe(recipe), HttpStatus.OK);
+        ResponseEntity<Recipe> responseEntity = new ResponseEntity(recipeRepository.save(recipe), HttpStatus.OK);
         return responseEntity;
     }
 
@@ -42,7 +46,7 @@ public class RecipeResource {
 
     @GetMapping("/recipes")
     ResponseEntity<List<Recipe>> getAll(){
-        List<Recipe> recipeList = mockDB.getAllRecipes();
+        List<Recipe> recipeList = recipeRepository.findAll();
         return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest","1").body(recipeList);
     }
 

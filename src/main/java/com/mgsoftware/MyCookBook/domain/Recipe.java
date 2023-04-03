@@ -7,8 +7,11 @@ import lombok.Data;
 import java.util.UUID;
 
 @Data
+@Entity
+@Table
 public class Recipe {
-
+    @Id
+    @GeneratedValue
     private UUID id;
     private String name;
     private String description;
