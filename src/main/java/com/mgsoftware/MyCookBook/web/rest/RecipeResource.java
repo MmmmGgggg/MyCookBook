@@ -1,6 +1,5 @@
 package com.mgsoftware.MyCookBook.web.rest;
 
-import com.mgsoftware.MyCookBook.MockDB;
 import com.mgsoftware.MyCookBook.domain.Recipe;
 import com.mgsoftware.MyCookBook.repository.RecipeRepository;
 import org.springframework.http.HttpStatus;
@@ -13,13 +12,11 @@ import java.util.UUID;
 @RestController
 public class RecipeResource {
 
-    private final MockDB mockDB;
 
     private final RecipeRepository recipeRepository;
 
-    public RecipeResource(MockDB mockDB, RecipeRepository recipeRepository) {
+    public RecipeResource(RecipeRepository recipeRepository) {
 
-        this.mockDB = mockDB;
         this.recipeRepository = recipeRepository;
     }
     @PostMapping("/recipes")
@@ -29,17 +26,24 @@ public class RecipeResource {
     }
 
     @PutMapping("/recipes/{id}")
-    ResponseEntity<Recipe> updateRecipe(@PathVariable UUID id, @RequestBody Recipe recipe){
-        ResponseEntity<Recipe> responseEntity = new ResponseEntity(mockDB.updateRecipe(id,recipe), HttpStatus.OK);
-        return responseEntity;
+    ResponseEntity<Recipe> updateRecipe(@PathVariable UUID id, @RequestBody Recipe recipe) {
+        if (recipeRepository.findById(id) != null) {
+            Recipe existingRecipe = recipeRepository.getReferenceById(id);
+            existingRecipe.setName(recipe.getName());
+            existingRecipe.setDescription(recipe.getDescription());
+            ResponseEntity<Recipe> responseEntity = new ResponseEntity(recipeRepository.save(existingRecipe), HttpStatus.OK);
+            return responseEntity;
+        } else
+            return new ResponseEntity<Recipe>(HttpStatus.NOT_FOUND);
     }
 
     @GetMapping("/recipes/{id}")
     ResponseEntity<Recipe> getRecipeById(@PathVariable UUID id) {
-        if (mockDB.getRecipeById(id) != null) {
-            Recipe recipe = mockDB.getRecipeById(id);
+        if (recipeRepository.findById(id) != null) {
+            Recipe recipe = recipeRepository.getReferenceById(id);
             ResponseEntity<Recipe> responseEntity = new ResponseEntity(recipe, HttpStatus.OK);
             return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest", "1").body(recipe);
+            //return responseEntity;
         }
         else return new ResponseEntity<Recipe>(HttpStatus.NOT_FOUND);
     }
@@ -52,20 +56,10 @@ public class RecipeResource {
 
     @DeleteMapping("/recipes/{id}")
     ResponseEntity<?> deleteRecipeById(@PathVariable UUID id) {
-        if (mockDB.getRecipeById(id) != null) {
-            mockDB.deleteRecipe(id);
+        if (recipeRepository.findById(id) != null) {
+            recipeRepository.deleteById(id);
             return ResponseEntity.status(HttpStatus.OK).build();
         }
         else return new ResponseEntity(HttpStatus.NOT_FOUND);
     }
-
-/*    @GetMapping("/recipes")
-    ResponseEntity<Recipe> test(){
-        Recipe recipe = new Recipe();
-        recipe.setName("Pileca juha");
-        recipe.setDescription("Recept za pilecu juhu");
-        ResponseEntity<Recipe> responseEntity = new ResponseEntity(recipe, HttpStatus.OK);
-        return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest","1").body(recipe);
-    }*/
-
 }
