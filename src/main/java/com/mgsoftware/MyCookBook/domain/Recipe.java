@@ -1,6 +1,7 @@
 package com.mgsoftware.MyCookBook.domain;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -20,6 +21,7 @@ public class Recipe {
     @Column
     private String description;
    @OneToMany(mappedBy = "recipe")
+   @JsonIgnore
     private Set<RecipeIngredient> recipeIngredients = new HashSet<>();
     public Recipe() {
     }

@@ -1,5 +1,6 @@
 package com.mgsoftware.MyCookBook.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
@@ -13,6 +14,7 @@ public class RecipeIngredient {
     @GeneratedValue
     private UUID id;
     @ManyToOne
+    @JsonIgnore
     private Recipe recipe;
     @ManyToOne
     private Ingredient ingredient;

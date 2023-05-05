@@ -2,6 +2,7 @@ package com.mgsoftware.MyCookBook.web.rest;
 
 import com.mgsoftware.MyCookBook.domain.Recipe;
 import com.mgsoftware.MyCookBook.repository.RecipeRepository;
+import com.mgsoftware.MyCookBook.service.dto.RecipeWithDetailsDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,11 +42,20 @@ public class RecipeResource {
     ResponseEntity<Recipe> getRecipeById(@PathVariable UUID id) {
         if (recipeRepository.findById(id) != null) {
             Recipe recipe = recipeRepository.getReferenceById(id);
-            ResponseEntity<Recipe> responseEntity = new ResponseEntity(recipe, HttpStatus.OK);
+            //RecipeWithDetailsDTO recipeWithDetailsDTO = new RecipeWithDetailsDTO(recipe);
             return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest", "1").body(recipe);
-            //return responseEntity;
         }
         else return new ResponseEntity<Recipe>(HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping("/recipes/{id}/details")
+    ResponseEntity<RecipeWithDetailsDTO> getRecipeWithDetails(@PathVariable UUID id) {
+        if (recipeRepository.findById(id) != null) {
+            Recipe recipe = recipeRepository.getReferenceById(id);
+            RecipeWithDetailsDTO recipeWithDetailsDTO = new RecipeWithDetailsDTO(recipe);
+            return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest", "1").body(recipeWithDetailsDTO);
+        }
+        else return new ResponseEntity<RecipeWithDetailsDTO>(HttpStatus.NOT_FOUND);
     }
 
     @GetMapping("/recipes")
