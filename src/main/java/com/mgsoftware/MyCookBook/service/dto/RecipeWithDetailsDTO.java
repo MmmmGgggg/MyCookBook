@@ -13,6 +13,10 @@ public class RecipeWithDetailsDTO {
     String description;
     List<RecipeIngredientDTO> recipeIngredientsDTO =  new ArrayList<>();
 
+    public RecipeWithDetailsDTO(){
+
+    }
+
     public RecipeWithDetailsDTO(Recipe recipe) {
         this.name = recipe.getName();
         this.description = recipe.getDescription();

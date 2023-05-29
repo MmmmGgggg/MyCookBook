@@ -2,13 +2,19 @@ package com.mgsoftware.MyCookBook.web.rest;
 
 import com.mgsoftware.MyCookBook.domain.Recipe;
 import com.mgsoftware.MyCookBook.repository.RecipeRepository;
+import com.mgsoftware.MyCookBook.service.RecipeService;
 import com.mgsoftware.MyCookBook.service.dto.RecipeWithDetailsDTO;
+import org.apache.tomcat.util.http.HeaderUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.UUID;
+
+import static org.hibernate.id.IdentifierGenerator.ENTITY_NAME;
 
 @RestController
 public class RecipeResource {
@@ -16,14 +22,19 @@ public class RecipeResource {
 
     private final RecipeRepository recipeRepository;
 
-    public RecipeResource(RecipeRepository recipeRepository) {
+    private final RecipeService recipeService;
+
+    public RecipeResource(RecipeRepository recipeRepository, RecipeService recipeService) {
 
         this.recipeRepository = recipeRepository;
+        this.recipeService = recipeService;
     }
     @PostMapping("/recipes")
-    ResponseEntity<Recipe> createRecipe(@RequestBody Recipe recipe){
-        ResponseEntity<Recipe> responseEntity = new ResponseEntity(recipeRepository.save(recipe), HttpStatus.OK);
-        return responseEntity;
+    public ResponseEntity<Recipe> createRecipe( @RequestBody RecipeWithDetailsDTO recipeWithDetailsDTO) throws URISyntaxException {
+        Recipe result = recipeService.createNewRecipe(recipeWithDetailsDTO);
+        return ResponseEntity
+                .created(new URI("/api/recipes/" + result.getId()))
+                .header("MyCookBookTest", "1").body(result);
     }
 
     @PutMapping("/recipes/{id}")
@@ -42,7 +53,6 @@ public class RecipeResource {
     ResponseEntity<Recipe> getRecipeById(@PathVariable UUID id) {
         if (recipeRepository.findById(id) != null) {
             Recipe recipe = recipeRepository.getReferenceById(id);
-            //RecipeWithDetailsDTO recipeWithDetailsDTO = new RecipeWithDetailsDTO(recipe);
             return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest", "1").body(recipe);
         }
         else return new ResponseEntity<Recipe>(HttpStatus.NOT_FOUND);
@@ -52,7 +62,8 @@ public class RecipeResource {
     ResponseEntity<RecipeWithDetailsDTO> getRecipeWithDetails(@PathVariable UUID id) {
         if (recipeRepository.findById(id) != null) {
             Recipe recipe = recipeRepository.getReferenceById(id);
-            RecipeWithDetailsDTO recipeWithDetailsDTO = new RecipeWithDetailsDTO(recipe);
+            //RecipeWithDetailsDTO recipeWithDetailsDTO = new RecipeWithDetailsDTO(recipe);
+            RecipeWithDetailsDTO recipeWithDetailsDTO = recipeService.getRecipeWithDetails(recipe);
             return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest", "1").body(recipeWithDetailsDTO);
         }
         else return new ResponseEntity<RecipeWithDetailsDTO>(HttpStatus.NOT_FOUND);
