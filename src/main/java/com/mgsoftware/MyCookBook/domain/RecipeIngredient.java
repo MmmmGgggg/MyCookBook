@@ -51,7 +51,7 @@ public class RecipeIngredient {
         return unit;
     }
 
-    public void setUnit(Unit unitId) {
+    public void setUnit(Unit unit) {
         this.unit = unit;
     }
 

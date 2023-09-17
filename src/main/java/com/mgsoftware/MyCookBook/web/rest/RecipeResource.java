@@ -37,6 +37,7 @@ public class RecipeResource {
                 .header("MyCookBookTest", "1").body(result);
     }
 
+/*
     @PutMapping("/recipes/{id}")
     ResponseEntity<Recipe> updateRecipe(@PathVariable UUID id, @RequestBody Recipe recipe) {
         if (recipeRepository.findById(id) != null) {
@@ -48,7 +49,16 @@ public class RecipeResource {
         } else
             return new ResponseEntity<Recipe>(HttpStatus.NOT_FOUND);
     }
+*/
 
+    @PutMapping("/recipes/{id}")
+    ResponseEntity<RecipeWithDetailsDTO> updateRecipe(@PathVariable UUID id, @RequestBody RecipeWithDetailsDTO recipeWithDetailsDTO) {
+        if (recipeRepository.findById(id) != null) {
+            Recipe recipe = recipeService.updateRecipe(recipeWithDetailsDTO, id);
+            return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest", "1").body(recipeWithDetailsDTO);
+        } else
+            return new ResponseEntity<RecipeWithDetailsDTO>(HttpStatus.NOT_FOUND);
+    }
     @GetMapping("/recipes/{id}")
     ResponseEntity<Recipe> getRecipeById(@PathVariable UUID id) {
         if (recipeRepository.findById(id) != null) {
@@ -62,7 +72,6 @@ public class RecipeResource {
     ResponseEntity<RecipeWithDetailsDTO> getRecipeWithDetails(@PathVariable UUID id) {
         if (recipeRepository.findById(id) != null) {
             Recipe recipe = recipeRepository.getReferenceById(id);
-            //RecipeWithDetailsDTO recipeWithDetailsDTO = new RecipeWithDetailsDTO(recipe);
             RecipeWithDetailsDTO recipeWithDetailsDTO = recipeService.getRecipeWithDetails(recipe);
             return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest", "1").body(recipeWithDetailsDTO);
         }

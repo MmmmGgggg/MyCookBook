@@ -49,4 +49,15 @@ public class Recipe {
     public void setRecipeIngredients(Set<RecipeIngredient> recipeIngredients) {
         this.recipeIngredients = recipeIngredients;
     }
+
+    public Recipe addRecipeIngredient(RecipeIngredient recipeIngredient) {
+        this.recipeIngredients.add(recipeIngredient);
+        recipeIngredient.setRecipe(this);
+        return this;
+    }
+
+    public Recipe removeRecipeIngredient(RecipeIngredient recipeIngredient) {
+        this.recipeIngredients.remove(recipeIngredient);
+        return this;
+    }
 }

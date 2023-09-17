@@ -1,7 +1,9 @@
 package com.mgsoftware.MyCookBook.service;
 
+import com.mgsoftware.MyCookBook.domain.Ingredient;
 import com.mgsoftware.MyCookBook.domain.Recipe;
 import com.mgsoftware.MyCookBook.domain.RecipeIngredient;
+import com.mgsoftware.MyCookBook.domain.Unit;
 import com.mgsoftware.MyCookBook.repository.IngredientRepository;
 import com.mgsoftware.MyCookBook.repository.RecipeIngredientRepository;
 import com.mgsoftware.MyCookBook.repository.RecipeRepository;
@@ -11,9 +13,8 @@ import com.mgsoftware.MyCookBook.service.dto.RecipeWithDetailsDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -60,6 +61,85 @@ public class RecipeService {
 
         return result;
     }
+     public Recipe updateRecipe(RecipeWithDetailsDTO recipeWithDetailsDTO, UUID id) {
+         Recipe existingRecipe = recipeRepository.getReferenceById(id);
+         existingRecipe.setName(recipeWithDetailsDTO.getName());
+         existingRecipe.setDescription(recipeWithDetailsDTO.getDescription());
+
+         final HashMap<String, RecipeIngredient> existingRecipeIngredients = new HashMap<>();
+         for (RecipeIngredient it: existingRecipe.getRecipeIngredients()) {
+             existingRecipeIngredients.put(it.getIngredient().getName(), it);
+         }
+
+         final HashMap<String, RecipeIngredientDTO> newRecipeIngredients = new HashMap<>();
+         for (RecipeIngredientDTO recipeIngredientDTO: recipeWithDetailsDTO.getRecipeIngredientsDTO()) {
+             newRecipeIngredients.put(recipeIngredientDTO.getIngredient(), recipeIngredientDTO);
+         }
+
+         final Set<String> existingRecipeIngredientsKeys = existingRecipeIngredients.keySet();
+         final Set<String> newRecipeIngredientsKeys = newRecipeIngredients.keySet();
+
+         final Set<String> forDeleting = existingRecipeIngredientsKeys.stream()
+                 .filter(it -> !newRecipeIngredientsKeys.contains(it)).collect(Collectors.toSet());
+
+         final Set<String> forAdding = newRecipeIngredientsKeys.stream().filter(it -> !existingRecipeIngredientsKeys.contains(it))
+                 .collect(Collectors.toSet());
+
+         final Set<String> forUpdating = existingRecipeIngredientsKeys.stream().filter(newRecipeIngredientsKeys::contains)
+                 .collect(Collectors.toSet());
+
+         updateExisting(existingRecipeIngredients, newRecipeIngredients, forUpdating);
+
+         for (String name: forDeleting) {
+             existingRecipe.removeRecipeIngredient(existingRecipeIngredients.get(name));
+         }
+
+         final List<String> existingUnits = forAdding.stream().map(it -> newRecipeIngredients.get(it).getUnit())
+                 .collect(Collectors.toList());
+         final Set<Unit> units = unitRepository.findAllByNameIn(existingUnits);
+
+         final List<String> existingIngredients = forAdding.stream().map(it -> newRecipeIngredients.get(it).getIngredient())
+                 .collect(Collectors.toList());
+         final Set<Ingredient> ingredients = ingredientRepository.findAllByNameIn(
+                 existingIngredients);
+         for (String name: forAdding) {
+             final RecipeIngredientDTO recipeIngredientDTO = newRecipeIngredients.get(name);
+
+             final RecipeIngredient recipeIngredient = new RecipeIngredient();
+             recipeIngredient.setUnit(
+                     units.stream()
+                             .filter(it -> it.getName().equals(recipeIngredientDTO.getUnit()))
+                             .findFirst().get());
+             recipeIngredient.setIngredient(
+                     ingredients.stream()
+                             .filter(it -> it.getName().equals(recipeIngredientDTO.getIngredient()))
+                             .findFirst().get());
+             recipeIngredient.setQuantity(recipeIngredientDTO.getQuantity());
+
+             existingRecipe.addRecipeIngredient(recipeIngredient);
+         }
+
+         return recipeRepository.save(existingRecipe);
+
+    }
+
+    private void updateExisting(HashMap<String, RecipeIngredient> existingIngredientForRecipe,
+                                HashMap<String, RecipeIngredientDTO> newIngredientForRecipe, Set<String> forUpdating) {
+        final List<String> existingUnits = forUpdating.stream().map(it -> newIngredientForRecipe.get(it).getUnit())
+                .collect(Collectors.toList());
+
+        final Set<Unit> units = unitRepository.findAllByNameIn(existingUnits);
+
+        for (String ingredientName : forUpdating) {
+            final RecipeIngredient recipeIngredient = existingIngredientForRecipe.get(ingredientName);
+            final RecipeIngredientDTO recipeIngredientDTO = newIngredientForRecipe.get(ingredientName);
+
+            recipeIngredient.setQuantity(recipeIngredientDTO.getQuantity());
+            recipeIngredient.setUnit(units.stream()
+                    .filter(it -> it.getName().equals(recipeIngredientDTO.getUnit())).findFirst().get());
+        }
+    }
+
 }
 
 

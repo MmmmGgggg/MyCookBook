@@ -21,8 +21,10 @@ public class RecipeWithDetailsDTO {
         this.name = recipe.getName();
         this.description = recipe.getDescription();
         Set<RecipeIngredient> recipeIngredients = recipe.getRecipeIngredients();
-        for (RecipeIngredient recipeIngredient : recipeIngredients) {
-            recipeIngredientsDTO.add(new RecipeIngredientDTO(recipeIngredient.getIngredient().getName(), recipeIngredient.getQuantity(), recipeIngredient.getUnit().getName()));
+        if (!recipeIngredients.isEmpty()) {
+            for (RecipeIngredient recipeIngredient : recipeIngredients) {
+                recipeIngredientsDTO.add(new RecipeIngredientDTO(recipeIngredient.getIngredient().getName(), recipeIngredient.getQuantity(), recipeIngredient.getUnit().getName()));
+            }
         }
     }
     public String getName() {
