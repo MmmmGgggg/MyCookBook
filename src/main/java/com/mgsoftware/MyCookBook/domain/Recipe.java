@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -15,14 +16,19 @@ import java.util.UUID;
 public class Recipe {
     @Id
     @GeneratedValue
+    @SequenceGenerator(name = "sequenceGenerator")
+    @Column
     private UUID id;
     @Column
     private String name;
     @Column
     private String description;
-   @OneToMany(mappedBy = "recipe")
+   @OneToMany(mappedBy = "recipe", cascade = {CascadeType.ALL}, orphanRemoval = true, fetch = FetchType.EAGER)
    @JsonIgnore
     private Set<RecipeIngredient> recipeIngredients = new HashSet<>();
+
+    @Column(name = "processed")
+    private boolean processed;
     public Recipe() {
     }
     public UUID getId() {
@@ -57,7 +63,16 @@ public class Recipe {
     }
 
     public Recipe removeRecipeIngredient(RecipeIngredient recipeIngredient) {
+        //this.recipeIngredients = null;
         this.recipeIngredients.remove(recipeIngredient);
         return this;
+    }
+
+    public boolean isProcessed() {
+        return processed;
+    }
+
+    public void setProcessed(boolean processed) {
+        this.processed = processed;
     }
 }

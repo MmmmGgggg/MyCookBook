@@ -84,6 +84,14 @@ public class RecipeResource {
         return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest","1").body(recipeList);
     }
 
+    @GetMapping("/recipes/{ingredientsCombination}")
+    ResponseEntity<List<Recipe>> getRecipeBySearch(@RequestParam String ingredientsCombination){
+        final List<Recipe> recipeList = recipeService.getRecipeBySearch(ingredientsCombination);
+        return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest","1").body(recipeList);
+    }
+
+
+
     @DeleteMapping("/recipes/{id}")
     ResponseEntity<?> deleteRecipeById(@PathVariable UUID id) {
         if (recipeRepository.findById(id) != null) {

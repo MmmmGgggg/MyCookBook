@@ -10,8 +10,12 @@ import java.util.Set;
 public class RecipeWithDetailsDTO {
 
     String name;
+
+
     String description;
     List<RecipeIngredientDTO> recipeIngredientsDTO =  new ArrayList<>();
+
+    boolean processed;
 
     public RecipeWithDetailsDTO(){
 
@@ -36,4 +40,13 @@ public class RecipeWithDetailsDTO {
     public List<RecipeIngredientDTO> getRecipeIngredientsDTO() {
         return recipeIngredientsDTO;
     }
+
+    public boolean isProcessed() {
+        return processed;
+    }
+
+    public void setProcessed(boolean processed) {
+        this.processed = processed;
+    }
+
 }

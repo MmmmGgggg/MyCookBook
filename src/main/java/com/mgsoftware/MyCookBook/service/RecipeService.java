@@ -1,15 +1,11 @@
 package com.mgsoftware.MyCookBook.service;
 
-import com.mgsoftware.MyCookBook.domain.Ingredient;
-import com.mgsoftware.MyCookBook.domain.Recipe;
-import com.mgsoftware.MyCookBook.domain.RecipeIngredient;
-import com.mgsoftware.MyCookBook.domain.Unit;
-import com.mgsoftware.MyCookBook.repository.IngredientRepository;
-import com.mgsoftware.MyCookBook.repository.RecipeIngredientRepository;
-import com.mgsoftware.MyCookBook.repository.RecipeRepository;
-import com.mgsoftware.MyCookBook.repository.UnitRepository;
+import com.mgsoftware.MyCookBook.domain.*;
+import com.mgsoftware.MyCookBook.repository.*;
 import com.mgsoftware.MyCookBook.service.dto.RecipeIngredientDTO;
 import com.mgsoftware.MyCookBook.service.dto.RecipeWithDetailsDTO;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +14,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@EnableScheduling
 public class RecipeService {
 
     private final RecipeRepository recipeRepository;
@@ -28,12 +25,15 @@ public class RecipeService {
 
     private final UnitRepository unitRepository;
 
-    public RecipeService(RecipeRepository recipeRepository, RecipeIngredientRepository recipeIngredientRepository, IngredientRepository ingredientRepository, UnitRepository unitRepository) {
+    private final RecipeSearchRepository recipeSearchRepository;
+
+    public RecipeService(RecipeRepository recipeRepository, RecipeIngredientRepository recipeIngredientRepository, IngredientRepository ingredientRepository, UnitRepository unitRepository, RecipeSearchRepository recipeSearchRepository) {
 
         this.recipeRepository = recipeRepository;
         this.recipeIngredientRepository = recipeIngredientRepository;
         this.ingredientRepository = ingredientRepository;
         this.unitRepository = unitRepository;
+        this.recipeSearchRepository = recipeSearchRepository;
     }
 
     public RecipeWithDetailsDTO getRecipeWithDetails(Recipe recipe) {
@@ -45,6 +45,7 @@ public class RecipeService {
         Recipe recipe = new Recipe();
         recipe.setName(recipeWithDetailsDTO.getName());
         recipe.setDescription(recipeWithDetailsDTO.getDescription());
+        recipe.setProcessed(false);
         Recipe result = recipeRepository.save(recipe);
 
         Set<RecipeIngredient> recipeIngredientList = new HashSet<>();
@@ -61,8 +62,17 @@ public class RecipeService {
 
         return result;
     }
+
+    public List<Recipe> getRecipeBySearch(String ingredientsCombination) {
+
+/*        final List<Recipe> allBySearch = recipeRepository.findAllBySearch(
+                List.of("Luk,Mrkva,Piletina,Češnjak,", "Mrkva,Piletina,Češnjak,"));*/
+        return null;
+
+    }
      public Recipe updateRecipe(RecipeWithDetailsDTO recipeWithDetailsDTO, UUID id) {
          Recipe existingRecipe = recipeRepository.getReferenceById(id);
+         //Optional<Recipe> existingRecipe = recipeRepository.findById(id);
          existingRecipe.setName(recipeWithDetailsDTO.getName());
          existingRecipe.setDescription(recipeWithDetailsDTO.getDescription());
 
@@ -92,6 +102,9 @@ public class RecipeService {
 
          for (String name: forDeleting) {
              existingRecipe.removeRecipeIngredient(existingRecipeIngredients.get(name));
+             //existingRecipeIngredients.get(name).removeRecipe(existingRecipe);
+
+             //recipeIngredientRepository.deleteById(existingRecipeIngredients.get(name).getId());
          }
 
          final List<String> existingUnits = forAdding.stream().map(it -> newRecipeIngredients.get(it).getUnit())
@@ -137,6 +150,80 @@ public class RecipeService {
             recipeIngredient.setQuantity(recipeIngredientDTO.getQuantity());
             recipeIngredient.setUnit(units.stream()
                     .filter(it -> it.getName().equals(recipeIngredientDTO.getUnit())).findFirst().get());
+        }
+    }
+
+    @Scheduled(fixedDelay = 60000)
+    public void searchIngredientsJob(){
+
+        for(Recipe recipe : recipeRepository.findAllByProcessed(false)) {
+
+            Set<RecipeIngredient> ingredientsForRecipe= recipe.getRecipeIngredients();
+            Iterator<RecipeIngredient> it = ingredientsForRecipe.iterator();
+            String[] ingredients = new String[ingredientsForRecipe.size()];
+            int k=0;
+            while (it.hasNext()) {
+                String ingredient = it.next().getIngredient().getName();
+                ingredients[k] = ingredient;
+                k++;
+            }
+            //Sort alphabeticaly
+            Arrays.sort(ingredients);
+            String allIngredientscombination="";
+            for (String ingredient : ingredients) {
+                allIngredientscombination +=ingredient + "," ;
+            }
+            RecipeSearch recipeSearch = new RecipeSearch();
+            recipeSearch.setRecipe(recipe);
+            recipeSearch.setIngredientsCombination(allIngredientscombination);
+            recipeSearch.setNrCombinations(ingredients.length);
+            recipeSearchRepository.save(recipeSearch);
+
+            int nrOfComb = ingredients.length -1;
+            while(nrOfComb>1) {
+                String tempCombinations[] = new String[nrOfComb];
+                // Save all combination using temporary array 'tempCombinations[]'
+                saveCombinations(ingredients, tempCombinations, 0, ingredients.length - 1, 0, nrOfComb, recipe);
+                nrOfComb--;
+            }
+            System.out.println(
+                    "Found not processed recipe - " + recipe.getName());
+            recipe.setProcessed(true);
+        }
+
+    }
+
+    /* allCombinations[]  ---> Input Array
+   tempCombinations[] ---> Temporary array to store current combination
+   start & end ---> Starting and Ending indexes in allCombinations[]
+   index  ---> Current index in tempCombinations[]
+   r ---> Size of a combination to be printed */
+    void saveCombinations(String allCombinations[], String tempCombinations[], int start,
+                          int end, int index, int r, Recipe recipe)
+    {
+        // Current combination is ready to be saved
+        if (index == r)
+        {
+            String ingredientscombination="";
+            for (int j=0; j<r; j++) {
+                System.out.print(tempCombinations[j] + " ");
+                ingredientscombination +=tempCombinations[j] + ",";
+            }
+            RecipeSearch recipeSearch = new RecipeSearch();
+            recipeSearch.setRecipe(recipe);
+            recipeSearch.setIngredientsCombination(ingredientscombination);
+            recipeSearch.setNrCombinations(tempCombinations.length);
+            recipeSearchRepository.save(recipeSearch);
+            return ;
+        }
+        // replace index with all possible elements. The condition
+        // "end-i+1 >= r-index" makes sure that including one element
+        // at index will make a combination with remaining elements
+        // at remaining positions
+        for (int i=start; i<=end && end-i+1 >= r-index; i++)
+        {
+            tempCombinations[index] = allCombinations[i];
+            saveCombinations(allCombinations, tempCombinations, i+1, end, index+1, r, recipe);
         }
     }
 

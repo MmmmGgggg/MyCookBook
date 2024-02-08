@@ -12,6 +12,7 @@ public class RecipeIngredient {
 
     @Id
     @GeneratedValue
+    @Column
     private UUID id;
     @ManyToOne
     @JsonIgnore
@@ -39,6 +40,10 @@ public class RecipeIngredient {
         this.recipe = recipe;
     }
 
+    public void removeRecipe(Recipe recipe) {
+        this.recipe = null;
+    }
+
     public Ingredient getIngredient() {
         return ingredient;
     }
@@ -62,4 +67,6 @@ public class RecipeIngredient {
     public void setQuantity(Double quantity) {
         this.quantity = quantity;
     }
+
+
 }
