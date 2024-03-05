@@ -63,16 +63,23 @@ public class RecipeService {
         return result;
     }
 
-    public List<Recipe> getRecipeBySearch(String ingredientsCombination) {
-
-/*        final List<Recipe> allBySearch = recipeRepository.findAllBySearch(
-                List.of("Luk,Mrkva,Piletina,Češnjak,", "Mrkva,Piletina,Češnjak,"));*/
-        return null;
+    public List<Recipe> getRecipeBySearch(String ingredients) {
+        ingredients = ingredients + ",";
+        String[] searchIngredients = (ingredients).split("((?<=,))");
+        Arrays.sort(searchIngredients);
+        List<String> inputStrings = Arrays.asList(searchIngredients);
+        List<String> result = getAllCombinations(inputStrings);
+        final List<Recipe> allBySearch = recipeRepository.findAllBySearch(
+                result);
+/*       final List<Recipe> allBySearch = recipeRepository.findAllBySearch(
+                List.of( "Luk,Mrkva,Piletina,","Luk,Mrkva,","Luk,Piletina,","Luk,","Mrkva,Piletina,","Mrkva,","Piletina,"));*/
+        return allBySearch;
 
     }
-     public Recipe updateRecipe(RecipeWithDetailsDTO recipeWithDetailsDTO, UUID id) {
+
+
+    public Recipe updateRecipe(RecipeWithDetailsDTO recipeWithDetailsDTO, UUID id) {
          Recipe existingRecipe = recipeRepository.getReferenceById(id);
-         //Optional<Recipe> existingRecipe = recipeRepository.findById(id);
          existingRecipe.setName(recipeWithDetailsDTO.getName());
          existingRecipe.setDescription(recipeWithDetailsDTO.getDescription());
 
@@ -102,9 +109,6 @@ public class RecipeService {
 
          for (String name: forDeleting) {
              existingRecipe.removeRecipeIngredient(existingRecipeIngredients.get(name));
-             //existingRecipeIngredients.get(name).removeRecipe(existingRecipe);
-
-             //recipeIngredientRepository.deleteById(existingRecipeIngredients.get(name).getId());
          }
 
          final List<String> existingUnits = forAdding.stream().map(it -> newRecipeIngredients.get(it).getUnit())
@@ -167,7 +171,6 @@ public class RecipeService {
                 ingredients[k] = ingredient;
                 k++;
             }
-            //Sort alphabeticaly
             Arrays.sort(ingredients);
             String allIngredientscombination="";
             for (String ingredient : ingredients) {
@@ -180,7 +183,7 @@ public class RecipeService {
             recipeSearchRepository.save(recipeSearch);
 
             int nrOfComb = ingredients.length -1;
-            while(nrOfComb>1) {
+            while(nrOfComb>0) {
                 String tempCombinations[] = new String[nrOfComb];
                 // Save all combination using temporary array 'tempCombinations[]'
                 saveCombinations(ingredients, tempCombinations, 0, ingredients.length - 1, 0, nrOfComb, recipe);
@@ -192,6 +195,7 @@ public class RecipeService {
         }
 
     }
+
 
     /* allCombinations[]  ---> Input Array
    tempCombinations[] ---> Temporary array to store current combination
@@ -227,6 +231,27 @@ public class RecipeService {
         }
     }
 
+
+
+    public static List<String> getAllCombinations(List<String> inputStrings) {
+        List<String> combinations = new ArrayList<>();
+        generateCombinations(inputStrings, 0, "", combinations);
+        return combinations;
+    }
+
+    private static void generateCombinations(List<String> inputStrings, int index, String currentCombination, List<String> combinations) {
+        if (index == inputStrings.size()) {
+            if (!currentCombination.isEmpty())
+                combinations.add(currentCombination);
+            return;
+        }
+
+        // Include the current string in the combination
+        generateCombinations(inputStrings, index + 1, currentCombination + inputStrings.get(index), combinations);
+
+        // Exclude the current string from the combination
+        generateCombinations(inputStrings, index + 1, currentCombination, combinations);
+    }
 }
 
 

@@ -14,11 +14,11 @@ public interface RecipeRepository extends JpaRepository<Recipe, UUID> {
 
     List<Recipe> findAllByProcessed(boolean processed);
 
-/*    @Query("SELECT r "
+    @Query("SELECT r "
             + "FROM Recipe r "
             + "JOIN RecipeSearch rs ON(r.id = rs.recipe.id) "
             + "WHERE rs.ingredientsCombination IN :search "
-            + "GROUP BY r.id, r.name, r.description, r.processed, r.createdBy, r.createdDate, r.lastModifiedBy, r.lastModifiedDate "
+            + "GROUP BY r.id, r.name, r.description "
             + "ORDER BY MAX(rs.nrCombinations) DESC")
-    List<Recipe> findAllBySearch(@Param("search") Collection<String> search);*/
+    List<Recipe> findAllBySearch(@Param("search") Collection<String> search);
 }

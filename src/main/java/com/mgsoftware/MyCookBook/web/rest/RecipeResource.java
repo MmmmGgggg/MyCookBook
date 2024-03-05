@@ -7,6 +7,7 @@ import com.mgsoftware.MyCookBook.service.dto.RecipeWithDetailsDTO;
 import org.apache.tomcat.util.http.HeaderUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -14,12 +15,9 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.UUID;
 
-import static org.hibernate.id.IdentifierGenerator.ENTITY_NAME;
-
 @RestController
+
 public class RecipeResource {
-
-
     private final RecipeRepository recipeRepository;
 
     private final RecipeService recipeService;
@@ -59,7 +57,9 @@ public class RecipeResource {
         } else
             return new ResponseEntity<RecipeWithDetailsDTO>(HttpStatus.NOT_FOUND);
     }
-    @GetMapping("/recipes/{id}")
+
+/*
+    @GetMapping("/recipes/id/{id}")
     ResponseEntity<Recipe> getRecipeById(@PathVariable UUID id) {
         if (recipeRepository.findById(id) != null) {
             Recipe recipe = recipeRepository.getReferenceById(id);
@@ -67,8 +67,10 @@ public class RecipeResource {
         }
         else return new ResponseEntity<Recipe>(HttpStatus.NOT_FOUND);
     }
+*/
 
-    @GetMapping("/recipes/{id}/details")
+
+    @GetMapping("/recipes/{id}")
     ResponseEntity<RecipeWithDetailsDTO> getRecipeWithDetails(@PathVariable UUID id) {
         if (recipeRepository.findById(id) != null) {
             Recipe recipe = recipeRepository.getReferenceById(id);
@@ -78,16 +80,26 @@ public class RecipeResource {
         else return new ResponseEntity<RecipeWithDetailsDTO>(HttpStatus.NOT_FOUND);
     }
 
+
+/*
     @GetMapping("/recipes")
     ResponseEntity<List<Recipe>> getAll(){
         List<Recipe> recipeList = recipeRepository.findAll();
         return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest","1").body(recipeList);
     }
+*/
 
-    @GetMapping("/recipes/{ingredientsCombination}")
-    ResponseEntity<List<Recipe>> getRecipeBySearch(@RequestParam String ingredientsCombination){
-        final List<Recipe> recipeList = recipeService.getRecipeBySearch(ingredientsCombination);
-        return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest","1").body(recipeList);
+
+    @GetMapping("/recipes")
+    ResponseEntity<List<Recipe>> getRecipeBySearch(@RequestParam(required = false) String ingredientsCombination){
+        if (ingredientsCombination!=null) {
+            final List<Recipe> recipeList = recipeService.getRecipeBySearch(ingredientsCombination);
+            return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest", "1").body(recipeList);
+        }
+        else {
+            final List<Recipe> recipeList = recipeRepository.findAll();
+            return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest","1").body(recipeList);
+        }
     }
 
 
