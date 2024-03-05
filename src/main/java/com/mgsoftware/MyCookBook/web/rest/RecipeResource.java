@@ -4,15 +4,15 @@ import com.mgsoftware.MyCookBook.domain.Recipe;
 import com.mgsoftware.MyCookBook.repository.RecipeRepository;
 import com.mgsoftware.MyCookBook.service.RecipeService;
 import com.mgsoftware.MyCookBook.service.dto.RecipeWithDetailsDTO;
-import org.apache.tomcat.util.http.HeaderUtil;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -27,6 +27,7 @@ public class RecipeResource {
         this.recipeRepository = recipeRepository;
         this.recipeService = recipeService;
     }
+
     @PostMapping("/recipes")
     public ResponseEntity<Recipe> createRecipe( @RequestBody RecipeWithDetailsDTO recipeWithDetailsDTO) throws URISyntaxException {
         Recipe result = recipeService.createNewRecipe(recipeWithDetailsDTO);
@@ -34,20 +35,6 @@ public class RecipeResource {
                 .created(new URI("/api/recipes/" + result.getId()))
                 .header("MyCookBookTest", "1").body(result);
     }
-
-/*
-    @PutMapping("/recipes/{id}")
-    ResponseEntity<Recipe> updateRecipe(@PathVariable UUID id, @RequestBody Recipe recipe) {
-        if (recipeRepository.findById(id) != null) {
-            Recipe existingRecipe = recipeRepository.getReferenceById(id);
-            existingRecipe.setName(recipe.getName());
-            existingRecipe.setDescription(recipe.getDescription());
-            ResponseEntity<Recipe> responseEntity = new ResponseEntity(recipeRepository.save(existingRecipe), HttpStatus.OK);
-            return responseEntity;
-        } else
-            return new ResponseEntity<Recipe>(HttpStatus.NOT_FOUND);
-    }
-*/
 
     @PutMapping("/recipes/{id}")
     ResponseEntity<RecipeWithDetailsDTO> updateRecipe(@PathVariable UUID id, @RequestBody RecipeWithDetailsDTO recipeWithDetailsDTO) {
@@ -58,20 +45,8 @@ public class RecipeResource {
             return new ResponseEntity<RecipeWithDetailsDTO>(HttpStatus.NOT_FOUND);
     }
 
-/*
-    @GetMapping("/recipes/id/{id}")
-    ResponseEntity<Recipe> getRecipeById(@PathVariable UUID id) {
-        if (recipeRepository.findById(id) != null) {
-            Recipe recipe = recipeRepository.getReferenceById(id);
-            return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest", "1").body(recipe);
-        }
-        else return new ResponseEntity<Recipe>(HttpStatus.NOT_FOUND);
-    }
-*/
-
-
     @GetMapping("/recipes/{id}")
-    ResponseEntity<RecipeWithDetailsDTO> getRecipeWithDetails(@PathVariable UUID id) {
+    ResponseEntity<RecipeWithDetailsDTO> getRecipeById(@PathVariable UUID id) {
         if (recipeRepository.findById(id) != null) {
             Recipe recipe = recipeRepository.getReferenceById(id);
             RecipeWithDetailsDTO recipeWithDetailsDTO = recipeService.getRecipeWithDetails(recipe);
@@ -80,29 +55,20 @@ public class RecipeResource {
         else return new ResponseEntity<RecipeWithDetailsDTO>(HttpStatus.NOT_FOUND);
     }
 
-
-/*
     @GetMapping("/recipes")
-    ResponseEntity<List<Recipe>> getAll(){
-        List<Recipe> recipeList = recipeRepository.findAll();
-        return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest","1").body(recipeList);
-    }
-*/
-
-
-    @GetMapping("/recipes")
-    ResponseEntity<List<Recipe>> getRecipeBySearch(@RequestParam(required = false) String ingredientsCombination){
+    ResponseEntity<Page<Recipe>> getRecipeBySearch(@RequestParam(defaultValue = "0") Integer pageNo,
+                                                   @RequestParam(defaultValue = "3") Integer pageSize,
+                                                   @RequestParam(required = false) String ingredientsCombination){
         if (ingredientsCombination!=null) {
-            final List<Recipe> recipeList = recipeService.getRecipeBySearch(ingredientsCombination);
+            final Page<Recipe> recipeList = recipeService.getRecipeBySearch(ingredientsCombination, pageNo, pageSize);
             return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest", "1").body(recipeList);
         }
         else {
-            final List<Recipe> recipeList = recipeRepository.findAll();
+            Pageable paging = PageRequest.of(pageNo, pageSize);
+            final Page<Recipe> recipeList = recipeRepository.findAll(paging);
             return ResponseEntity.status(HttpStatus.OK).header("MyCookBookTest","1").body(recipeList);
         }
     }
-
-
 
     @DeleteMapping("/recipes/{id}")
     ResponseEntity<?> deleteRecipeById(@PathVariable UUID id) {

@@ -4,6 +4,9 @@ import com.mgsoftware.MyCookBook.domain.*;
 import com.mgsoftware.MyCookBook.repository.*;
 import com.mgsoftware.MyCookBook.service.dto.RecipeIngredientDTO;
 import com.mgsoftware.MyCookBook.service.dto.RecipeWithDetailsDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -63,14 +66,15 @@ public class RecipeService {
         return result;
     }
 
-    public List<Recipe> getRecipeBySearch(String ingredients) {
+    public Page<Recipe> getRecipeBySearch(String ingredients, Integer pageNo, Integer pageSize) {
         ingredients = ingredients + ",";
         String[] searchIngredients = (ingredients).split("((?<=,))");
         Arrays.sort(searchIngredients);
         List<String> inputStrings = Arrays.asList(searchIngredients);
         List<String> result = getAllCombinations(inputStrings);
-        final List<Recipe> allBySearch = recipeRepository.findAllBySearch(
-                result);
+        Pageable paging = PageRequest.of(pageNo, pageSize);
+        final Page<Recipe> allBySearch = recipeRepository.findAllBySearch(
+                result,paging);
 /*       final List<Recipe> allBySearch = recipeRepository.findAllBySearch(
                 List.of( "Luk,Mrkva,Piletina,","Luk,Mrkva,","Luk,Piletina,","Luk,","Mrkva,Piletina,","Mrkva,","Piletina,"));*/
         return allBySearch;

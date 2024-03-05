@@ -1,6 +1,8 @@
 package com.mgsoftware.MyCookBook.repository;
 
 import com.mgsoftware.MyCookBook.domain.Recipe;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,5 +22,5 @@ public interface RecipeRepository extends JpaRepository<Recipe, UUID> {
             + "WHERE rs.ingredientsCombination IN :search "
             + "GROUP BY r.id, r.name, r.description "
             + "ORDER BY MAX(rs.nrCombinations) DESC")
-    List<Recipe> findAllBySearch(@Param("search") Collection<String> search);
+    Page<Recipe> findAllBySearch(@Param("search") Collection<String> search, Pageable pageable);
 }
