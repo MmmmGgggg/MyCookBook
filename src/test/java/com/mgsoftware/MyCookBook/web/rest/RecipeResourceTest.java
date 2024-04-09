@@ -2,7 +2,11 @@ package com.mgsoftware.MyCookBook.web.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mgsoftware.MyCookBook.domain.Recipe;
+import com.mgsoftware.MyCookBook.domain.RecipeIngredient;
+import com.mgsoftware.MyCookBook.repository.IngredientRepository;
+import com.mgsoftware.MyCookBook.repository.RecipeIngredientRepository;
 import com.mgsoftware.MyCookBook.repository.RecipeRepository;
+import com.mgsoftware.MyCookBook.repository.UnitRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,11 +14,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,12 +38,21 @@ class RecipeResourceTest {
     private static final String DEFAULT_NAME = "TestRecipe";
     private static final String UPDATED_NAME = "UpdatedTestRecipe";
     private static final String DEFAULT_DESCRIPTION = "TestRecipe_description";
-    private static final String UPDATED_DESCRIPTION = "BBBBBBBBBB";
+    private static final String UPDATED_DESCRIPTION = "UpdatedTestRecipe_description";
 
     @Autowired
     private MockMvc restRecipeMockMvc;
     @Autowired
     private RecipeRepository recipeRepository;
+
+    @Autowired
+    private RecipeIngredientRepository recipeIngredientRepository;
+
+    @Autowired
+    private IngredientRepository ingredientRepository;
+
+    @Autowired
+    private UnitRepository unitRepository;
     @Autowired
     private EntityManager em;
     @Autowired
@@ -53,10 +70,26 @@ class RecipeResourceTest {
     private static Random random = new Random();
     private static AtomicLong count = new AtomicLong(random.nextInt() + (2 * Integer.MAX_VALUE));
 
-    public static Recipe createEntity(EntityManager em) {
+    public Recipe createEntity(EntityManager em) {
         Recipe recipe = new Recipe();
         recipe.setName(DEFAULT_NAME);
         recipe.setDescription(DEFAULT_DESCRIPTION);
+
+/*        Set<RecipeIngredient> recipeIngredientList = new HashSet<>();
+        RecipeIngredient recipeIngredient_1 = new RecipeIngredient();
+        recipeIngredient_1.setIngredient(ingredientRepository.findByName("Mrkva"));
+        recipeIngredient_1.setUnit(unitRepository.findByName("gram"));
+        recipeIngredient_1.setQuantity(100.0);
+        RecipeIngredient recipeIngredient_2 = new RecipeIngredient();
+        recipeIngredient_2.setIngredient(ingredientRepository.findByName("Mrkva"));
+        recipeIngredient_2.setUnit(unitRepository.findByName("gram"));
+        recipeIngredient_2.setQuantity(100.0);
+        recipeIngredientList.add(recipeIngredient_1);
+        recipeIngredientList.add(recipeIngredient_2);
+        recipe.addRecipeIngredient(recipeIngredient_1);
+        recipe.addRecipeIngredient(recipeIngredient_2);
+        recipe.setRecipeIngredients(recipeIngredientList);*/
+
         return recipe;
 
     }
@@ -71,6 +104,7 @@ class RecipeResourceTest {
     public void createRecipe() throws Exception {
         int databaseSizeBeforeCreate = recipeRepository.findAll().size();
 
+
         restRecipeMockMvc.perform(post(ENTITY_API_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(recipe)))
@@ -81,6 +115,7 @@ class RecipeResourceTest {
         Recipe testRecipe = recipeList.get(recipeList.size() - 1);
         assertThat(testRecipe.getName()).isEqualTo(DEFAULT_NAME);
         assertThat(testRecipe.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
+        //assertThat(testRecipe.getRecipeIngredients()).hasSize(2);
 
     }
     @Test
