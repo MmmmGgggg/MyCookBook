@@ -56,8 +56,20 @@ public class RecipeService {
         List<RecipeIngredientDTO> recipeIngredientsDTO = recipeWithDetailsDTO.getRecipeIngredientsDTO();
         recipeIngredientsDTO.forEach(recipeIngredientDTO -> {
             RecipeIngredient recipeIngredient = new RecipeIngredient();
-            recipeIngredient.setIngredient(ingredientRepository.findByName(recipeIngredientDTO.getIngredient()));
-            recipeIngredient.setUnit(unitRepository.findByName(recipeIngredientDTO.getUnit()));
+            Ingredient ingredient = ingredientRepository.findByName(recipeIngredientDTO.getIngredient());
+            if (ingredient == null)  {
+                ingredient = new Ingredient();
+                ingredient.setName(recipeIngredientDTO.getIngredient());
+                ingredientRepository.save(ingredient);
+            }
+            recipeIngredient.setIngredient(ingredient);
+            Unit unit = unitRepository.findByName(recipeIngredientDTO.getUnit());
+            if (unit == null)  {
+                unit = new Unit();
+                unit.setName(recipeIngredientDTO.getUnit());
+                unitRepository.save(unit);
+            }
+            recipeIngredient.setUnit(unit);
             recipeIngredient.setQuantity(recipeIngredientDTO.getQuantity());
             recipeIngredient.setRecipe(recipe);
             recipeIngredientList.add(recipeIngredientRepository.save(recipeIngredient));
