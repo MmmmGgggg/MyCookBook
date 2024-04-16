@@ -1,12 +1,16 @@
 package com.mgsoftware.MyCookBook.web.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mgsoftware.MyCookBook.domain.Ingredient;
 import com.mgsoftware.MyCookBook.domain.Recipe;
 import com.mgsoftware.MyCookBook.domain.RecipeIngredient;
+import com.mgsoftware.MyCookBook.domain.Unit;
 import com.mgsoftware.MyCookBook.repository.IngredientRepository;
 import com.mgsoftware.MyCookBook.repository.RecipeIngredientRepository;
 import com.mgsoftware.MyCookBook.repository.RecipeRepository;
 import com.mgsoftware.MyCookBook.repository.UnitRepository;
+import com.mgsoftware.MyCookBook.service.RecipeService;
+import com.mgsoftware.MyCookBook.service.dto.RecipeWithDetailsDTO;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,11 +63,9 @@ class RecipeResourceTest {
     ObjectMapper objectMapper;
     private Recipe recipe;
 
-    private Recipe updatedRecipe;
-
     @Autowired
     private RecipeResource recipeResource;
-
+    
     private static final String ENTITY_API_URL = "/recipes";
     private static final String ENTITY_API_URL_ID = ENTITY_API_URL + "/{id}";
 
@@ -74,22 +76,6 @@ class RecipeResourceTest {
         Recipe recipe = new Recipe();
         recipe.setName(DEFAULT_NAME);
         recipe.setDescription(DEFAULT_DESCRIPTION);
-
-/*        Set<RecipeIngredient> recipeIngredientList = new HashSet<>();
-        RecipeIngredient recipeIngredient_1 = new RecipeIngredient();
-        recipeIngredient_1.setIngredient(ingredientRepository.findByName("Mrkva"));
-        recipeIngredient_1.setUnit(unitRepository.findByName("gram"));
-        recipeIngredient_1.setQuantity(100.0);
-        RecipeIngredient recipeIngredient_2 = new RecipeIngredient();
-        recipeIngredient_2.setIngredient(ingredientRepository.findByName("Mrkva"));
-        recipeIngredient_2.setUnit(unitRepository.findByName("gram"));
-        recipeIngredient_2.setQuantity(100.0);
-        recipeIngredientList.add(recipeIngredient_1);
-        recipeIngredientList.add(recipeIngredient_2);
-        recipe.addRecipeIngredient(recipeIngredient_1);
-        recipe.addRecipeIngredient(recipeIngredient_2);
-        recipe.setRecipeIngredients(recipeIngredientList);*/
-
         return recipe;
 
     }
@@ -102,25 +88,27 @@ class RecipeResourceTest {
 
     @Test
     public void createRecipe() throws Exception {
+
         int databaseSizeBeforeCreate = recipeRepository.findAll().size();
 
+        RecipeWithDetailsDTO recipeWithDetailsDTO = new RecipeWithDetailsDTO(recipe);
 
         restRecipeMockMvc.perform(post(ENTITY_API_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(recipe)))
+                        .content(objectMapper.writeValueAsString(recipeWithDetailsDTO)))
                 .andExpect(status().isCreated());
-
         List<Recipe> recipeList = recipeRepository.findAll();
         assertThat(recipeList).hasSize(databaseSizeBeforeCreate + 1);
         Recipe testRecipe = recipeList.get(recipeList.size() - 1);
         assertThat(testRecipe.getName()).isEqualTo(DEFAULT_NAME);
         assertThat(testRecipe.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
-        //assertThat(testRecipe.getRecipeIngredients()).hasSize(2);
 
     }
     @Test
     public void updateRecipe() throws Exception {
+
         recipeRepository.saveAndFlush(recipe);
+
         int databaseSizeBeforeCreate = recipeRepository.findAll().size();
 
         List<Recipe> recipeList = recipeRepository.findAll();
@@ -146,21 +134,12 @@ class RecipeResourceTest {
     public void getAllRecipes() throws Exception {
         // Initialize the database
         recipeRepository.saveAndFlush(recipe);
-        //List<Recipe> recipeList = recipeRepository.findAll();
 
-       restRecipeMockMvc
-                .perform(get(ENTITY_API_URL))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.[*].id").value(hasItem(recipe.getId().toString())))
-                .andExpect(jsonPath("$.[*].name").value(hasItem(DEFAULT_NAME)))
-                .andExpect(jsonPath("$.[*].description").value(hasItem(DEFAULT_DESCRIPTION)));
-
-/*        restRecipeMockMvc
+        restRecipeMockMvc
                 .perform(get(ENTITY_API_URL)).andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(recipe.getId().toString())))
-                .andExpect(jsonPath("$.name", is(DEFAULT_NAME)))
-                .andExpect(jsonPath("$.description", is(DEFAULT_DESCRIPTION)));*/
+                .andExpect(jsonPath("$..id", hasItem(recipe.getId().toString())))
+                .andExpect(jsonPath("$..name", hasItem(DEFAULT_NAME)))
+                .andExpect(jsonPath("$..description", hasItem(DEFAULT_DESCRIPTION)));
 
     }
 
