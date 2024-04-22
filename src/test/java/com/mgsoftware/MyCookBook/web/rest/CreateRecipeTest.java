@@ -19,27 +19,25 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.hamcrest.CoreMatchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class RecipeResourceTest {
+public class CreateRecipeTest {
 
     private static final String DEFAULT_NAME = "TestRecipe";
     private static final String UPDATED_NAME = "UpdatedTestRecipe";
     private static final String DEFAULT_DESCRIPTION = "TestRecipe_description";
     private static final String UPDATED_DESCRIPTION = "UpdatedTestRecipe_description";
+
+    private static final String ENTITY_API_URL = "/recipes";
 
     @Autowired
     private MockMvc restRecipeMockMvc;
@@ -62,32 +60,12 @@ class RecipeResourceTest {
 
     @Autowired
     private RecipeResource recipeResource;
-    
-    private static final String ENTITY_API_URL = "/recipes";
-    private static final String ENTITY_API_URL_ID = ENTITY_API_URL + "/{id}";
 
-    private static Random random = new Random();
-    private static AtomicLong count = new AtomicLong(random.nextInt() + (2 * Integer.MAX_VALUE));
 
     public Recipe createEntity(EntityManager em) {
         Recipe recipe = new Recipe();
         recipe.setName(DEFAULT_NAME);
         recipe.setDescription(DEFAULT_DESCRIPTION);
-
-        return recipe;
-
-    }
-
-    @BeforeEach
-    public void initTest() {
-        recipe = createEntity(em);
-
-    }
-
-    @Test
-    public void createRecipe() throws Exception {
-
-        int databaseSizeBeforeCreate = recipeRepository.findAll().size();
 
         Set<RecipeIngredient> recipeIngredientList = new HashSet<>();
 
@@ -116,10 +94,24 @@ class RecipeResourceTest {
         recipeIngredient_2.setQuantity(100.0);
         recipeIngredient_2.setRecipe(recipe);
         recipeIngredientList.add(recipeIngredient_2);
-
         recipe.addRecipeIngredient(recipeIngredient_1);
         recipe.addRecipeIngredient(recipeIngredient_2);
         recipe.setRecipeIngredients(recipeIngredientList);
+        //recipeRepository.saveAndFlush(recipe);
+        return recipe;
+
+    }
+
+    @BeforeEach
+    public void initTest() {
+        recipe = createEntity(em);
+
+    }
+
+    @Test
+    public void createRecipe() throws Exception {
+
+        int databaseSizeBeforeCreate = recipeRepository.findAll().size();
 
         RecipeWithDetailsDTO recipeWithDetailsDTO = new RecipeWithDetailsDTO(recipe);
 
@@ -133,62 +125,6 @@ class RecipeResourceTest {
         assertThat(testRecipe.getName()).isEqualTo(DEFAULT_NAME);
         assertThat(testRecipe.getDescription()).isEqualTo(DEFAULT_DESCRIPTION);
         assertThat(testRecipe.getRecipeIngredients()).hasSize(2);
-
-    }
-    @Test
-    public void updateRecipe() throws Exception {
-
-        recipeRepository.saveAndFlush(recipe);
-
-        int databaseSizeBeforeCreate = recipeRepository.findAll().size();
-
-        List<Recipe> recipeList = recipeRepository.findAll();
-        Recipe updatedRecipe = recipeList.get(recipeList.size() - 1);
-
-        updatedRecipe.setDescription(UPDATED_DESCRIPTION);
-
-        restRecipeMockMvc.perform(put(ENTITY_API_URL+ "/" + updatedRecipe.getId().toString())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedRecipe)))
-                .andExpect(status().isOk());
-
-        recipeList = recipeRepository.findAll();
-        Recipe testRecipe = recipeList.get(recipeList.size() - 1);
-        assertThat(recipeList).hasSize(databaseSizeBeforeCreate);
-
-        assertThat(testRecipe.getName()).isEqualTo(DEFAULT_NAME);
-        assertThat(testRecipe.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
-
-    }
-
-    @Test
-    public void getAllRecipes() throws Exception {
-        // Initialize the database
-        recipeRepository.saveAndFlush(recipe);
-
-        restRecipeMockMvc
-                .perform(get(ENTITY_API_URL)).andExpect(status().isOk())
-                .andExpect(jsonPath("$..id", hasItem(recipe.getId().toString())))
-                .andExpect(jsonPath("$..name", hasItem(DEFAULT_NAME)))
-                .andExpect(jsonPath("$..description", hasItem(DEFAULT_DESCRIPTION)));
-
-    }
-
-    @Test
-    public void deleteRecipe() throws Exception {
-        recipeRepository.saveAndFlush(recipe);
-        int databaseSizeBeforeCreate = recipeRepository.findAll().size();
-
-        List<Recipe> recipeList = recipeRepository.findAll();
-        Recipe deletedRecipe = recipeList.get(recipeList.size() - 1);
-
-        restRecipeMockMvc.perform(delete(ENTITY_API_URL + "/" + deletedRecipe.getId().toString()))
-                .andExpect(status().isOk());
-
-        recipeList = recipeRepository.findAll();
-        assertThat(recipeList).hasSize(databaseSizeBeforeCreate - 1);
-
-
 
     }
 }
