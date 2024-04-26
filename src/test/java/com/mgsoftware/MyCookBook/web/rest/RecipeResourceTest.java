@@ -11,8 +11,10 @@ import com.mgsoftware.MyCookBook.repository.RecipeRepository;
 import com.mgsoftware.MyCookBook.repository.UnitRepository;
 import com.mgsoftware.MyCookBook.service.dto.RecipeWithDetailsDTO;
 import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,6 +36,7 @@ import static org.hamcrest.CoreMatchers.is;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RecipeResourceTest {
 
     private static final String DEFAULT_NAME = "TestRecipe";
@@ -74,23 +77,6 @@ class RecipeResourceTest {
         recipe.setName(DEFAULT_NAME);
         recipe.setDescription(DEFAULT_DESCRIPTION);
 
-        return recipe;
-
-    }
-
-    @BeforeEach
-    public void initTest() {
-        recipe = createEntity(em);
-
-    }
-
-    @Test
-    public void createRecipe() throws Exception {
-
-        int databaseSizeBeforeCreate = recipeRepository.findAll().size();
-
-        Set<RecipeIngredient> recipeIngredientList = new HashSet<>();
-
         Ingredient ingredient_1 = new Ingredient();
         ingredient_1.setName("Mrkva");
         ingredientRepository.saveAndFlush(ingredient_1);
@@ -102,6 +88,8 @@ class RecipeResourceTest {
         Unit unit_1 = new Unit();
         unit_1.setName("gram");
         unitRepository.saveAndFlush(unit_1);
+
+        Set<RecipeIngredient> recipeIngredientList = new HashSet<>();
 
         RecipeIngredient recipeIngredient_1 = new RecipeIngredient();
         recipeIngredient_1.setIngredient(ingredientRepository.findByName("Mrkva"));
@@ -120,6 +108,23 @@ class RecipeResourceTest {
         recipe.addRecipeIngredient(recipeIngredient_1);
         recipe.addRecipeIngredient(recipeIngredient_2);
         recipe.setRecipeIngredients(recipeIngredientList);
+
+        return recipe;
+
+    }
+
+    @BeforeAll
+    public void initTest() {
+        recipe = createEntity(em);
+
+
+
+    }
+
+    @Test
+    public void createRecipe() throws Exception {
+
+        int databaseSizeBeforeCreate = recipeRepository.findAll().size();
 
         RecipeWithDetailsDTO recipeWithDetailsDTO = new RecipeWithDetailsDTO(recipe);
 
