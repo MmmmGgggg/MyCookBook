@@ -129,12 +129,33 @@ public class RecipeService {
 
          final List<String> existingUnits = forAdding.stream().map(it -> newRecipeIngredients.get(it).getUnit())
                  .collect(Collectors.toList());
-         final Set<Unit> units = unitRepository.findAllByNameIn(existingUnits);
+         final Set <Unit> units = new HashSet<>();
+
+         for (String un : existingUnits) {
+             Unit unit = unitRepository.findByName(un);
+             if (unit == null) {
+                 unit = new Unit();
+                 unit.setName(un);
+                 unitRepository.save(unit);
+             }
+             units.add(unit);
+         }
+         //final Set<Unit> units = unitRepository.findAllByNameIn(existingUnits);
 
          final List<String> existingIngredients = forAdding.stream().map(it -> newRecipeIngredients.get(it).getIngredient())
                  .collect(Collectors.toList());
-         final Set<Ingredient> ingredients = ingredientRepository.findAllByNameIn(
-                 existingIngredients);
+        final Set<Ingredient> ingredients =  new HashSet<>();
+        for (String ingr : existingIngredients) {
+            Ingredient ingredient = ingredientRepository.findByName(ingr);
+            if (ingredient == null)  {
+                ingredient = new Ingredient();
+                ingredient.setName(ingr);
+                ingredientRepository.save(ingredient);
+            }
+            ingredients.add(ingredient);
+        }
+         //final Set<Ingredient> ingredients = ingredientRepository.findAllByNameIn(
+         //        existingIngredients);
          for (String name: forAdding) {
              final RecipeIngredientDTO recipeIngredientDTO = newRecipeIngredients.get(name);
 
