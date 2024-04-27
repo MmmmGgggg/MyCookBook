@@ -57,7 +57,7 @@ public class RecipeResource {
 
     @GetMapping("/recipes")
     ResponseEntity<Page<Recipe>> getRecipeBySearch(@RequestParam(defaultValue = "0") Integer pageNo,
-                                                   @RequestParam(defaultValue = "3") Integer pageSize,
+                                                   @RequestParam(defaultValue = "10") Integer pageSize,
                                                    @RequestParam(required = false) String ingredientsCombination){
         if (ingredientsCombination!=null) {
             final Page<Recipe> recipeList = recipeService.getRecipeBySearch(ingredientsCombination, pageNo, pageSize);

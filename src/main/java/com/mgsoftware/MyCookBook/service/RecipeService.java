@@ -56,8 +56,20 @@ public class RecipeService {
         List<RecipeIngredientDTO> recipeIngredientsDTO = recipeWithDetailsDTO.getRecipeIngredientsDTO();
         recipeIngredientsDTO.forEach(recipeIngredientDTO -> {
             RecipeIngredient recipeIngredient = new RecipeIngredient();
-            recipeIngredient.setIngredient(ingredientRepository.findByName(recipeIngredientDTO.getIngredient()));
-            recipeIngredient.setUnit(unitRepository.findByName(recipeIngredientDTO.getUnit()));
+            Ingredient ingredient = ingredientRepository.findByName(recipeIngredientDTO.getIngredient());
+            if (ingredient == null)  {
+                ingredient = new Ingredient();
+                ingredient.setName(recipeIngredientDTO.getIngredient());
+                ingredientRepository.save(ingredient);
+            }
+            recipeIngredient.setIngredient(ingredient);
+            Unit unit = unitRepository.findByName(recipeIngredientDTO.getUnit());
+            if (unit == null)  {
+                unit = new Unit();
+                unit.setName(recipeIngredientDTO.getUnit());
+                unitRepository.save(unit);
+            }
+            recipeIngredient.setUnit(unit);
             recipeIngredient.setQuantity(recipeIngredientDTO.getQuantity());
             recipeIngredient.setRecipe(recipe);
             recipeIngredientList.add(recipeIngredientRepository.save(recipeIngredient));
@@ -117,12 +129,33 @@ public class RecipeService {
 
          final List<String> existingUnits = forAdding.stream().map(it -> newRecipeIngredients.get(it).getUnit())
                  .collect(Collectors.toList());
-         final Set<Unit> units = unitRepository.findAllByNameIn(existingUnits);
+         final Set <Unit> units = new HashSet<>();
+
+         for (String un : existingUnits) {
+             Unit unit = unitRepository.findByName(un);
+             if (unit == null) {
+                 unit = new Unit();
+                 unit.setName(un);
+                 unitRepository.save(unit);
+             }
+             units.add(unit);
+         }
+         //final Set<Unit> units = unitRepository.findAllByNameIn(existingUnits);
 
          final List<String> existingIngredients = forAdding.stream().map(it -> newRecipeIngredients.get(it).getIngredient())
                  .collect(Collectors.toList());
-         final Set<Ingredient> ingredients = ingredientRepository.findAllByNameIn(
-                 existingIngredients);
+        final Set<Ingredient> ingredients =  new HashSet<>();
+        for (String ingr : existingIngredients) {
+            Ingredient ingredient = ingredientRepository.findByName(ingr);
+            if (ingredient == null)  {
+                ingredient = new Ingredient();
+                ingredient.setName(ingr);
+                ingredientRepository.save(ingredient);
+            }
+            ingredients.add(ingredient);
+        }
+         //final Set<Ingredient> ingredients = ingredientRepository.findAllByNameIn(
+         //        existingIngredients);
          for (String name: forAdding) {
              final RecipeIngredientDTO recipeIngredientDTO = newRecipeIngredients.get(name);
 
