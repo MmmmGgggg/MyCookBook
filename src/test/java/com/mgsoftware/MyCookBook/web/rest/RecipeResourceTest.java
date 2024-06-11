@@ -152,17 +152,40 @@ class RecipeResourceTest {
 
         updatedRecipe.setDescription(UPDATED_DESCRIPTION);
 
+        Set<RecipeIngredient> updatedRecipeIngredients = updatedRecipe.getRecipeIngredients();
+
+        Ingredient ingredient = new Ingredient();
+        ingredient.setName("Brokula");
+        ingredientRepository.saveAndFlush(ingredient);
+        Unit unit = new Unit();
+        unit.setName("kg");
+        unitRepository.saveAndFlush(unit);
+        RecipeIngredient recipeIngredient = new RecipeIngredient();
+        recipeIngredient.setIngredient(ingredientRepository.findByName("Brokula"));
+        recipeIngredient.setUnit(unitRepository.findByName("kg"));
+        recipeIngredient.setQuantity(200.0);
+        recipeIngredient.setRecipe(updatedRecipe);
+        updatedRecipeIngredients.add(recipeIngredient);
+
+        updatedRecipe.setRecipeIngredients(updatedRecipeIngredients);
+
+        RecipeWithDetailsDTO updatedRecipeWithDetailsDTO = new RecipeWithDetailsDTO(updatedRecipe);
+
         restRecipeMockMvc.perform(put(ENTITY_API_URL+ "/" + updatedRecipe.getId().toString())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedRecipe)))
+                        .content(objectMapper.writeValueAsString(updatedRecipeWithDetailsDTO)))
                 .andExpect(status().isOk());
+
 
         recipeList = recipeRepository.findAll();
         Recipe testRecipe = recipeList.get(recipeList.size() - 1);
+        Set<RecipeIngredient> testRecipeIngredients = testRecipe.getRecipeIngredients();
+
         assertThat(recipeList).hasSize(databaseSizeBeforeCreate);
 
         assertThat(testRecipe.getName()).isEqualTo(DEFAULT_NAME);
         assertThat(testRecipe.getDescription()).isEqualTo(UPDATED_DESCRIPTION);
+        assertThat(testRecipe.getRecipeIngredients()).hasSize(3);
 
     }
 
